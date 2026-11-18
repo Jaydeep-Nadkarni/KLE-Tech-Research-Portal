@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { errMsg } from '../api/client';
+import logo from '../assets/kle-tech-logo.webp';
 
 export default function Login() {
   const { login } = useAuth();
@@ -19,7 +20,7 @@ export default function Login() {
   return (
     <div className="grid min-h-screen lg:grid-cols-[1.1fr_1fr]">
       <div className="hidden flex-col justify-between bg-brand p-12 text-white lg:flex">
-        <div className="flex items-center gap-3"><div className="flex h-9 w-9 items-center justify-center rounded bg-white/15 text-sm font-bold">KLE</div><span className="text-sm font-medium">KLE Technological University</span></div>
+        <div className="w-fit rounded bg-white px-5 py-4"><img src={logo} alt="KLE Technological University, Dr. M. S. Sheshgiri Campus, Belagavi" className="h-auto w-72 max-w-full" /></div>
         <div>
           <h1 className="max-w-md text-3xl font-semibold leading-tight tracking-tight">Faculty Research Intelligence &amp; Analytics</h1>
           <p className="mt-4 max-w-md text-sm leading-relaxed text-white/75">Publications, citations and indexing status for every faculty member, gathered from Scopus, OpenAlex, ORCID, Crossref and Semantic Scholar, with the source of every number shown.</p>

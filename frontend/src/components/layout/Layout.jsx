@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { NavLink, Outlet, Link, useLocation } from 'react-router-dom';
 import { UserCog, KeyRound, UsersRound, Library, LayoutDashboard, Users, FileText, ShieldCheck, RefreshCw, Settings2, Download, BookOpen, LogOut, Menu, X, ChevronRight, UserCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import logo from '../../assets/kle-tech-logo.webp';
 import { api, errMsg } from '../../api/client';
 import { Modal, Field, ErrorState, Notice } from '../ui/Ui';
 
@@ -69,9 +70,9 @@ export default function Layout() {
 
   const side = (
     <div className="flex h-full flex-col">
-      <div className="flex items-center gap-2.5 border-b border-line px-4 py-4">
-        <div className="flex h-8 w-8 items-center justify-center rounded bg-brand text-[13px] font-bold text-white">KLE</div>
-        <div className="leading-tight"><p className="text-[13px] font-semibold">Research Portal</p><p className="text-[11px] text-ink-mute">KLE Technological University</p></div>
+      <div className="border-b border-line px-4 pb-3 pt-4">
+        <img src={logo} alt="KLE Technological University, Dr. M. S. Sheshgiri Campus, Belagavi" className="h-auto w-full" />
+        <p className="mt-2 text-[11px] font-semibold uppercase tracking-wide text-ink-soft">Faculty Research Portal</p>
       </div>
       <nav className="flex-1 space-y-0.5 overflow-y-auto p-2">
         {items.map(({ to, label, icon: Icon, end }) => (
