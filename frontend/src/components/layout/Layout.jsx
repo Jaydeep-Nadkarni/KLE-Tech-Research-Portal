@@ -72,7 +72,6 @@ export default function Layout() {
     <div className="flex h-full flex-col">
       <div className="border-b border-line px-4 pb-3 pt-4">
         <img src={logo} alt="KLE Technological University, Dr. M. S. Sheshgiri Campus, Belagavi" className="h-auto w-full" />
-        <p className="mt-2 text-[11px] font-semibold uppercase tracking-wide text-ink-soft">Faculty Research Portal</p>
       </div>
       <nav className="flex-1 space-y-0.5 overflow-y-auto p-2">
         {items.map(({ to, label, icon: Icon, end }) => (

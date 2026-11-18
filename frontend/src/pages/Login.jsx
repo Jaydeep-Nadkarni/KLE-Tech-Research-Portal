@@ -3,6 +3,7 @@ import { Loader2, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { errMsg } from '../api/client';
 import logo from '../assets/kle-tech-logo.webp';
+import photo from '../assets/login-photo.png';
 
 export default function Login() {
   const { login } = useAuth();
@@ -19,16 +20,18 @@ export default function Login() {
 
   return (
     <div className="grid min-h-screen lg:grid-cols-[1.1fr_1fr]">
-      <div className="hidden flex-col justify-between bg-brand p-12 text-white lg:flex">
-        <div className="w-fit rounded bg-white px-5 py-4"><img src={logo} alt="KLE Technological University, Dr. M. S. Sheshgiri Campus, Belagavi" className="h-auto w-72 max-w-full" /></div>
-        <div>
+      <div className="relative hidden flex-col justify-end overflow-hidden bg-brand p-12 text-white lg:flex" style={{ backgroundImage: `url(${photo})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+        {/* Dark brand-coloured overlay keeps the text readable over the photo */}
+        <div className="absolute inset-0 bg-gradient-to-t from-brand-dark/95 via-brand-dark/70 to-brand-dark/30" aria-hidden="true" />
+        <div className="relative">
           <h1 className="max-w-md text-3xl font-semibold leading-tight tracking-tight">Faculty Research Intelligence &amp; Analytics</h1>
-          <p className="mt-4 max-w-md text-sm leading-relaxed text-white/75">Publications, citations and indexing status for every faculty member, gathered from Scopus, OpenAlex, ORCID, Crossref and Semantic Scholar, with the source of every number shown.</p>
+          <p className="mt-4 max-w-md text-sm leading-relaxed text-white/85">Publications, citations and indexing status for every faculty member, gathered from Scopus, OpenAlex, ORCID, Crossref and Semantic Scholar, with the source of every number shown.</p>
+          <p className="mt-8 text-xs text-white/70">Citation counts are reported per source and are never combined.</p>
         </div>
-        <p className="text-xs text-white/55">Citation counts are reported per source and are never combined.</p>
       </div>
       <div className="flex items-center justify-center p-6">
         <form onSubmit={submit} className="w-full max-w-sm space-y-4">
+          <img src={logo} alt="KLE Technological University, Dr. M. S. Sheshgiri Campus, Belagavi" className="mb-6 h-auto w-full max-w-[320px]" />
           <div><h1>Sign in</h1><p className="mt-1 text-[13px] text-ink-soft">Use your university email address.</p></div>
           {error && <div className="flex items-start gap-2 rounded border border-red-200 bg-red-50 p-2.5 text-xs text-red-800" role="alert"><AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />{error}</div>}
           <div><label className="label" htmlFor="email">Email</label><input id="email" type="email" required autoComplete="username" className="input" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
