@@ -26,6 +26,18 @@ r.post('/login', limiter, asyncH(async (req, res) => {
   res.cookie('token', signToken(user), cookieOpts).json({ user: publicUser(user) });
 }));
 
+r.post('/change-password', authenticate, limiter, asyncH(async (req, res) => {
+  const b = z.object({ currentPassword: z.string().min(1), newPassword: z.string().min(8).max(100) }).safeParse(req.body);
+  if (!b.success) return res.status(400).json({ error: 'New password must be at least 8 characters' });
+  const user = await User.findById(req.user._id);
+  if (!(await bcrypt.compare(b.data.currentPassword, user.passwordHash))) return res.status(400).json({ error: 'Current password is incorrect' });
+  if (b.data.currentPassword === b.data.newPassword) return res.status(400).json({ error: 'Choose a password different from the current one' });
+  user.passwordHash = await bcrypt.hash(b.data.newPassword, 10);
+  await user.save();
+  await AuditLog.create({ user: user._id, userEmail: user.email, action: 'password_change' });
+  res.json({ ok: true });
+}));
+
 r.post('/logout', (req, res) => res.clearCookie('token').json({ ok: true }));
 
 r.get('/me', authenticate, asyncH(async (req, res) => {

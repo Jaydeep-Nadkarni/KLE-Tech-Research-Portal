@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { NavLink, Outlet, Link, useLocation } from 'react-router-dom';
-import { UsersRound, Library, LayoutDashboard, Users, FileText, ShieldCheck, RefreshCw, Settings2, Download, BookOpen, LogOut, Menu, X, ChevronRight, UserCircle } from 'lucide-react';
+import { UserCog, KeyRound, UsersRound, Library, LayoutDashboard, Users, FileText, ShieldCheck, RefreshCw, Settings2, Download, BookOpen, LogOut, Menu, X, ChevronRight, UserCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { api, errMsg } from '../../api/client';
+import { Modal, Field, ErrorState, Notice } from '../ui/Ui';
 
 const ROLE_LABEL = { super_admin: 'Super Admin', hod: 'Head of Department', faculty: 'Faculty', viewer: 'Read-only viewer' };
 
@@ -11,12 +13,12 @@ function nav(user, canViewAll, isAdmin) {
   else items.push({ to: `/faculty/${user.faculty}`, label: 'My research profile', icon: UserCircle });
   items.push({ to: '/publications', label: 'Publications', icon: FileText });
   if (canViewAll) items.push({ to: '/journals', label: 'Journals', icon: Library }, { to: '/coauthors', label: 'Co-authors', icon: UsersRound });
-  if (isAdmin) items.push({ to: '/verification', label: 'Verification', icon: ShieldCheck }, { to: '/sync', label: 'Synchronization', icon: RefreshCw }, { to: '/manage', label: 'Faculty management', icon: Settings2 });
+  if (isAdmin) items.push({ to: '/verification', label: 'Verification', icon: ShieldCheck }, { to: '/sync', label: 'Synchronization', icon: RefreshCw }, { to: '/manage', label: 'Faculty management', icon: Settings2 }, { to: '/users', label: 'Users', icon: UserCog });
   items.push({ to: '/reports', label: 'Reports', icon: Download }, { to: '/definitions', label: 'Definitions', icon: BookOpen });
   return items;
 }
 
-const CRUMBS = { coauthors: 'Co-authors', journals: 'Journals', faculty: 'Faculty', publications: 'Publications', verification: 'Verification', sync: 'Synchronization', manage: 'Faculty management', reports: 'Reports', definitions: 'Definitions' };
+const CRUMBS = { users: 'Users', coauthors: 'Co-authors', journals: 'Journals', faculty: 'Faculty', publications: 'Publications', verification: 'Verification', sync: 'Synchronization', manage: 'Faculty management', reports: 'Reports', definitions: 'Definitions' };
 
 function Breadcrumbs({ override }) {
   const { pathname } = useLocation();
@@ -35,9 +37,34 @@ function Breadcrumbs({ override }) {
   );
 }
 
+function ChangePassword({ onClose }) {
+  const [v, setV] = useState({ currentPassword: '', newPassword: '', confirm: '' });
+  const [err, setErr] = useState(''); const [done, setDone] = useState(false); const [busy, setBusy] = useState(false);
+  const set = (k) => (e) => setV((s) => ({ ...s, [k]: e.target.value }));
+  const submit = async (e) => {
+    e.preventDefault(); setErr('');
+    if (v.newPassword !== v.confirm) return setErr('The new passwords do not match');
+    setBusy(true);
+    try { await api.post('/auth/change-password', { currentPassword: v.currentPassword, newPassword: v.newPassword }); setDone(true); } catch (x) { setErr(errMsg(x)); } finally { setBusy(false); }
+  };
+  return (
+    <Modal title="Change your password" onClose={onClose}>
+      {done ? <><Notice>Password changed. Use the new one next time you sign in.</Notice><div className="mt-4 flex justify-end"><button className="btn btn-primary" onClick={onClose}>Close</button></div></> : (
+        <form onSubmit={submit} className="space-y-3">
+          {err && <ErrorState message={err} />}
+          <Field label="Current password"><input type="password" className="input" required autoComplete="current-password" value={v.currentPassword} onChange={set('currentPassword')} /></Field>
+          <Field label="New password (at least 8 characters)"><input type="password" className="input" required minLength={8} autoComplete="new-password" value={v.newPassword} onChange={set('newPassword')} /></Field>
+          <Field label="Repeat new password"><input type="password" className="input" required minLength={8} autoComplete="new-password" value={v.confirm} onChange={set('confirm')} /></Field>
+          <div className="flex justify-end gap-2"><button type="button" className="btn" onClick={onClose}>Cancel</button><button className="btn btn-primary" disabled={busy}>Change password</button></div>
+        </form>)}
+    </Modal>
+  );
+}
+
 export default function Layout() {
   const { user, logout, canViewAll, isAdmin } = useAuth();
   const [open, setOpen] = useState(false);
+  const [pw, setPw] = useState(false);
   const items = nav(user, canViewAll, isAdmin);
 
   const side = (
@@ -73,10 +100,12 @@ export default function Layout() {
           </div>
           <div className="flex items-center gap-3">
             <div className="hidden text-right leading-tight sm:block"><p className="text-[13px] font-medium">{user.facultyName || (user.name === ROLE_LABEL[user.role] ? user.email : user.name)}</p><p className="text-[11px] text-ink-mute">{ROLE_LABEL[user.role]}</p></div>
+            <button className="btn" onClick={() => setPw(true)} title="Change your password"><KeyRound className="h-3.5 w-3.5" /><span className="hidden md:inline"> Password</span></button>
             <button className="btn" onClick={logout}><LogOut className="h-3.5 w-3.5" /> Sign out</button>
           </div>
         </header>
         <main className="mx-auto max-w-[1400px] p-4 lg:p-6"><Outlet /></main>
+        {pw && <ChangePassword onClose={() => setPw(false)} />}
       </div>
     </div>
   );

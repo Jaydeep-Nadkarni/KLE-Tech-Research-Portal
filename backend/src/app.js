@@ -5,7 +5,8 @@ import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import { env } from './config/env.js';
 import { logger } from './utils/logger.js';
-import { authenticate } from './middleware/auth.js';
+import { authenticate, requireRole, ADMIN } from './middleware/auth.js';
+import users from './routes/users.js';
 import auth from './routes/auth.js';
 import faculty from './routes/faculty.js';
 import { researchers, publications } from './routes/research.js';
@@ -29,6 +30,7 @@ export function createApp() {
 
   app.get('/api/health', (req, res) => res.json({ ok: true }));
   app.use('/api/auth', auth);
+  app.use('/api/users', authenticate, requireRole(...ADMIN), users);
   app.use('/api/faculty', authenticate, faculty);
   app.use('/api/researchers', authenticate, researchers);
   app.use('/api/publications', authenticate, publications);

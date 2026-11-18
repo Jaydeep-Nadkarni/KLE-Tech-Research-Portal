@@ -9,6 +9,7 @@ import Publications from './pages/Publications';
 import PublicationDetail from './pages/PublicationDetail';
 import Journals from './pages/Journals';
 import Coauthors from './pages/Coauthors';
+import Users from './pages/Users';
 import Verification from './pages/Verification';
 import Sync from './pages/Sync';
 import FacultyManage from './pages/FacultyManage';
@@ -35,6 +36,7 @@ export default function App() {
         <Route path="faculty/:id" element={<FacultyProfile />} />
         <Route path="publications" element={<Publications />} />
         <Route path="publications/:id" element={<PublicationDetail />} />
+        <Route path="users" element={<Guard admin><Users /></Guard>} />
         <Route path="coauthors" element={<Guard viewAll><Coauthors /></Guard>} />
         <Route path="journals" element={<Guard viewAll><Journals /></Guard>} />
         <Route path="verification" element={<Guard admin><Verification /></Guard>} />

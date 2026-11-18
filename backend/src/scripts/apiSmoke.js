@@ -125,8 +125,39 @@ check('invalid IEEE format rejected (400)', (await text(hod.cookie, '/reports/ie
 check("faculty cannot download another faculty's IEEE list (403)", (await text(fac.cookie, `/reports/ieee?format=txt&facultyId=${other.id}`)).status === 403);
 check('faculty can download their own IEEE list', (await text(fac.cookie, `/reports/ieee?format=txt&facultyId=${ownId}`)).status === 200);
 check('faculty can export their own report but not the department one', (await text(fac.cookie, `/reports/export?type=faculty&format=csv&facultyId=${ownId}`)).status === 200 && (await text(fac.cookie, '/reports/export?type=department&format=csv')).status === 403);
+// User management (creates a temporary user and removes it again)
+{
+  const J = { 'content-type': 'application/json' };
+  const email = `smoke.user.${Date.now()}@example.org`;
+  const list = await H('/users');
+  check('HOD can list users', list.status === 200 && list.body.items.some((u) => u.role === 'hod'));
+  check('users API blocked for faculty (403)', (await F('/users')).status === 403);
+  check('short password rejected (400)', (await H('/users', { method: 'POST', headers: J, body: JSON.stringify({ email, name: 'Smoke User', role: 'viewer', password: 'short' }) })).status === 400);
+  check('faculty account without a faculty member rejected (400)', (await H('/users', { method: 'POST', headers: J, body: JSON.stringify({ email, name: 'Smoke User', role: 'faculty' }) })).status === 400);
+  check('HOD cannot create a super admin (403)', (await H('/users', { method: 'POST', headers: J, body: JSON.stringify({ email, name: 'Smoke User', role: 'super_admin' }) })).status === 403);
+  const created = await H('/users', { method: 'POST', headers: J, body: JSON.stringify({ email, name: 'Smoke User', role: 'viewer' }) });
+  const pw1 = created.body.generatedPassword, uid = created.body.user?.id;
+  check('HOD creates a user; password generated once, hash never returned', created.status === 201 && pw1?.length >= 8 && !('passwordHash' in created.body.user));
+  check('duplicate email rejected (409)', (await H('/users', { method: 'POST', headers: J, body: JSON.stringify({ email, name: 'Dup', role: 'viewer' }) })).status === 409);
+  const lg = await fetch(`${BASE}/auth/login`, { method: 'POST', headers: J, body: JSON.stringify({ email, password: pw1 }) });
+  const V = api(lg.headers.get('set-cookie')?.split(';')[0]);
+  check('new user can sign in with the generated password', lg.status === 200);
+  check('viewer sees dashboards but cannot manage users or sync', (await V('/admin/overview')).status === 200 && (await V('/users')).status === 403 && (await V('/sync/all', { method: 'POST' })).status === 403);
+  check('wrong current password rejected when changing password', (await V('/auth/change-password', { method: 'POST', headers: J, body: JSON.stringify({ currentPassword: 'nope-nope', newPassword: 'NewPassw0rd!' }) })).status === 400);
+  check('user can change their own password', (await V('/auth/change-password', { method: 'POST', headers: J, body: JSON.stringify({ currentPassword: pw1, newPassword: 'NewPassw0rd!' }) })).status === 200);
+  const loginOld = await fetch(`${BASE}/auth/login`, { method: 'POST', headers: J, body: JSON.stringify({ email, password: pw1 }) });
+  const loginNew = await fetch(`${BASE}/auth/login`, { method: 'POST', headers: J, body: JSON.stringify({ email, password: 'NewPassw0rd!' }) });
+  check('old password stops working, new one works', loginOld.status === 401 && loginNew.status === 200);
+  const rp = await H(`/users/${uid}/reset-password`, { method: 'POST', headers: J, body: '{}' });
+  check('HOD can reset a password (shown once)', rp.status === 200 && rp.body.generatedPassword?.length >= 8);
+  check('HOD can deactivate; deactivated user cannot sign in', (await H(`/users/${uid}`, { method: 'PUT', headers: J, body: JSON.stringify({ active: false }) })).status === 200 && (await fetch(`${BASE}/auth/login`, { method: 'POST', headers: J, body: JSON.stringify({ email, password: rp.body.generatedPassword }) })).status === 401);
+  const myId = (await H('/users')).body.items.find((u) => u.email === HOD_EMAIL).id;
+  check('cannot deactivate, demote or delete your own account (400)', (await H(`/users/${myId}`, { method: 'PUT', headers: J, body: JSON.stringify({ active: false }) })).status === 400 && (await H(`/users/${myId}`, { method: 'PUT', headers: J, body: JSON.stringify({ role: 'viewer' }) })).status === 400 && (await H(`/users/${myId}`, { method: 'DELETE' })).status === 400);
+  check('temporary user deleted (cleanup)', (await H(`/users/${uid}`, { method: 'DELETE' })).status === 200 && !(await H('/users')).body.items.some((u) => u.email === email));
+}
+
 // Co-authors
-const ca = await H('/admin/coauthors?limit=100');
+const ca =await H('/admin/coauthors?limit=100');
 const classes = Object.keys(ca.body.labels || {});
 check('co-authors classified into known classes only', ca.status === 200 && ca.body.items.length > 0 && ca.body.items.every((i) => classes.includes(i.class)), `${ca.body.totals?.people} people, ${JSON.stringify(ca.body.summary)}`);
 check('summary counts add up to distinct co-authors', Object.values(ca.body.summary).reduce((a, b) => a + b, 0) === ca.body.totals.people);
